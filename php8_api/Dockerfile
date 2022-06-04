@@ -1,4 +1,4 @@
-FROM 8.1.7RC1-fpm
+FROM php:8.1.7RC1-fpm
 
 # Arguments defined in docker-compose.yml
 ARG user
@@ -24,7 +24,7 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd sockets
 RUN pecl install xdebug && docker-php-ext-enable xdebug
 
 
-ADD ./xdebug/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/
+COPY docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/
 RUN echo "include_path=/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini" >> /usr/local/etc/php/php.ini
 
 # Get latest Composer
@@ -39,11 +39,5 @@ RUN mkdir -p /home/$user/.composer && \
 RUN pecl install -o -f redis \
     &&  rm -rf /tmp/pear \
     &&  docker-php-ext-enable redis
-
-# Install supervisor
-RUN apk --update add supervisor && mkdir -p /var/log/supervisor
-
-# Set working directory
-WORKDIR /var/www
 
 USER $user

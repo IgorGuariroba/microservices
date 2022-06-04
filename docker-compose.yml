@@ -22,7 +22,12 @@ services:
 
 
   php74_api:
-    build: ./php74-api/Dockerfile
+    build:
+      args:
+        user: use
+        uid: 1000
+      context: ./php74_api
+      dockerfile: Dockerfile
     container_name: php74_api
     environment:
       - PHP_IDE_CONFIG=serverName=php-cli
@@ -34,19 +39,22 @@ services:
       - composer-data:/root/.composer
       - ./profiling/:/tmp
     extra_hosts:
-      - "micro_auth.local"
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
     depends_on:
       - redis_api
       - mailhog_api
-      - queue_auth
       - rabbitmq
     networks:
       - microapi
 
   php8_api:
-    build: ./php8-api/Dockerfile
+    build:
+      args:
+        user: use
+        uid: 1000
+      context: ./php8_api
+      dockerfile: Dockerfile
     container_name: php8_api
     environment:
       - PHP_IDE_CONFIG=serverName=php-cli
@@ -58,13 +66,11 @@ services:
       - composer-data:/root/.composer
       - ./profiling/:/tmp
     extra_hosts:
-      - "micro_auth.local"
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
     depends_on:
       - redis_api
       - mailhog_api
-      - queue_auth
       - rabbitmq
     networks:
       - microapi
@@ -80,7 +86,7 @@ services:
       - microapi
 
 
-  mailhog:
+  mailhog_api:
     container_name: mailhog_api
     image: mailhog/mailhog
     expose:
@@ -89,29 +95,11 @@ services:
     networks:
       - microapi
 
-  queue_auth:
-    container_name: queue_auth
-    build:
-        args:
-          user: use
-          uid: 1000
-        context: ./queue_auth/
-        dockerfile: Dockerfile
-    restart: unless-stopped
-    command: "php artisan queue:work"
-    volumes:
-        - ./:/var/www
-    depends_on:
-        - redis_auth
-    networks:
-        - microapi
-
   nodejs_api:
-    build:
-      context: ./nodejs/Dockerfile
+    build: ./nodejs_api
     container_name: nodejs_api
     volumes:
-      - ./www/:/app
+      - ./www/:/app/
     restart: unless-stopped
     networks:
       - microapi
@@ -140,7 +128,7 @@ services:
      volumes:
         - ./.docker/mysql/dbdata:/var/lib/mysql
      networks:
-        - microauth
+        - microapi
 
 volumes:
   composer-data:

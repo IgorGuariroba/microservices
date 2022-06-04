@@ -1,3 +1,5 @@
 ./www/*
 .idea/*
-profiling/
+profiling/application/cache
+.docker/
+proxy/logs/
