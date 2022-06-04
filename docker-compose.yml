@@ -1,0 +1,150 @@
+version: "3.7"
+services:
+  proxy:
+    build: ./proxy
+    container_name: proxy
+    volumes:
+      - ./proxy/sites-enabled:/etc/nginx/conf.d
+      - ./www/:/var/www/html/
+      - ./ssl/:/var/www/ssl/
+      - ./proxy/logs:/usr/local/openresty/nginx/logs
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - HOST_IP=${HOST_IP}
+    networks:
+      default:
+        aliases:
+          - auth_auth.local
+    depends_on:
+      - php74_api
+
+
+  php74_api:
+    build: ./php74-api/Dockerfile
+    container_name: php74_api
+    environment:
+      - PHP_IDE_CONFIG=serverName=php-cli
+      - APP_ENV=development
+      - XDEBUG_MODE=${XDEBUG_MODE}
+      - PHP_IDE_CONFIG=serverName=XdebugServer
+    volumes:
+      - ./www/:/var/www/html/
+      - composer-data:/root/.composer
+      - ./profiling/:/tmp
+    extra_hosts:
+      - "micro_auth.local"
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      - redis_api
+      - mailhog_api
+      - queue_auth
+      - rabbitmq
+    networks:
+      - microapi
+
+  php8_api:
+    build: ./php8-api/Dockerfile
+    container_name: php8_api
+    environment:
+      - PHP_IDE_CONFIG=serverName=php-cli
+      - APP_ENV=development
+      - XDEBUG_MODE=${XDEBUG_MODE}
+      - PHP_IDE_CONFIG=serverName=XdebugServer
+    volumes:
+      - ./www/:/var/www/html/
+      - composer-data:/root/.composer
+      - ./profiling/:/tmp
+    extra_hosts:
+      - "micro_auth.local"
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      - redis_api
+      - mailhog_api
+      - queue_auth
+      - rabbitmq
+    networks:
+      - microapi
+
+  redis_api:
+    container_name: redis_api
+    image: redis:latest
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis_api
+    ports:
+      - "6379:6379"
+    networks:
+      - microapi
+
+
+  mailhog:
+    container_name: mailhog_api
+    image: mailhog/mailhog
+    expose:
+      - 1025
+      - 8025
+    networks:
+      - microapi
+
+  queue_auth:
+    container_name: queue_auth
+    build:
+        args:
+          user: use
+          uid: 1000
+        context: ./queue_auth/
+        dockerfile: Dockerfile
+    restart: unless-stopped
+    command: "php artisan queue:work"
+    volumes:
+        - ./:/var/www
+    depends_on:
+        - redis_auth
+    networks:
+        - microapi
+
+  nodejs_api:
+    build:
+      context: ./nodejs/Dockerfile
+    container_name: nodejs_api
+    volumes:
+      - ./www/:/app
+    restart: unless-stopped
+    networks:
+      - microapi
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - /var/lib/rabbitmq/
+      - /var/log/rabbitmq
+    networks:
+      - microapi
+
+  mysql_auth:
+     container_name: mysql_auth
+     image: mysql:5.7.22
+     restart: unless-stopped
+     environment:
+        MYSQL_DATABASE: ${AUTH_DB_DATABASE}
+        MYSQL_ROOT_PASSWORD: ${AUTH_DB_PASSWORD}
+        MYSQL_PASSWORD: ${AUTH_DB_PASSWORD}
+        MYSQL_USER: ${AUTH_DB_USERNAME}
+     volumes:
+        - ./.docker/mysql/dbdata:/var/lib/mysql
+     networks:
+        - microauth
+
+volumes:
+  composer-data:
+
+networks:
+  microapi:
+    driver: bridge
