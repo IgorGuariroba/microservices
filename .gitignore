@@ -3,3 +3,5 @@
 profiling/application/cache
 .docker/
 proxy/logs/
+application/cache
+www
