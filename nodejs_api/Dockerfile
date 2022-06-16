@@ -1,19 +1,23 @@
 FROM node:16
 
-# Create app directory
-WORKDIR /usr/src/app
+# instala um servidor http simples para servir conteúdo estático
+RUN npm install -g http-server
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
+RUN npm install -g npm@8.12.1
+
+# faz da pasta 'app' o diretório atual de trabalho
+WORKDIR /app
+
+
+# copia os arquivos 'package.json' e 'package-lock.json' (se disponível)
 #COPY package*.json ./
 
+## instala dependências do projeto
 #RUN npm install
-# If you are building your code for production
-# RUN npm ci --only=production
 
-# Bundle app source
-COPY . .
+RUN npm install -g @vue/cli
+## compila a aplicação de produção com minificação
+#RUN npm run build
 
-EXPOSE 8080
-CMD [ "node", "server.js" ]
+EXPOSE 8081
+CMD [ "http-server", "dist" ]

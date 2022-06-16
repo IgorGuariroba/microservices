@@ -5,7 +5,7 @@ services:
     container_name: proxy
     volumes:
       - ./proxy/sites-enabled:/etc/nginx/conf.d
-      - ./www/:/var/www/html/
+      - ./www/:/var/www/
       - ./ssl/:/var/www/ssl/
       - ./proxy/logs:/usr/local/openresty/nginx/logs
     ports:
@@ -14,11 +14,13 @@ services:
     environment:
       - HOST_IP=${HOST_IP}
     networks:
-      default:
+      microapi:
         aliases:
           - auth_auth.local
+          - tracker-api.local
     depends_on:
       - php74_api
+
 
 
   php74_api:
@@ -101,6 +103,8 @@ services:
     volumes:
       - ./www/:/app/
     restart: unless-stopped
+    ports:
+    - 8081:8081
     networks:
       - microapi
 

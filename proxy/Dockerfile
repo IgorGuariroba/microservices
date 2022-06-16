@@ -1,4 +1,5 @@
-FROM openresty/openresty
+FROM nginx:latest
 
-RUN rm /usr/local/openresty/nginx/conf/nginx.conf
-COPY ./nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
+RUN apt-get update && apt-get install -y iputils-ping
+RUN rm /etc/nginx/nginx.conf
+COPY ./nginx.conf /etc/nginx/nginx.conf
